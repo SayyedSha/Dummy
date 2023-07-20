@@ -1,23 +1,22 @@
 from selenium import webdriver
 from selenium.webdriver.common.by import By
-from db_con import con2
+from db_con import get_review_summary
 import re
 import time
 import undetected_chromedriver as uc
+from bs4 import BeautifulSoup
+# conn = con2()
+# cursor = conn.cursor()
 
-conn = con2()
-cursor = conn.cursor()
 
-
-driver= webdriver.Chrome()
+driver= webdriver.Edge()
 driver.maximize_window()
 # driver = webdriver.Chrome()
-url = f"https://www.google.com/search?q=dr.+PHILLIP+ROSENBERG&bih=763&biw=1536&hl=en&sxsrf=AB5stBhBeRuL3fyumHSye2cDIK7OBqxmDw%3A1688713086355&ei=frenZIqeFeyK4-EP2M-g6AY&ved=0ahUKEwiK1Y69gvz_AhVsxTgGHdgnCG0Q4dUDCA8&uact=5&oq=dr.+PHILLIP+ROSENBERG&gs_lcp=Cgxnd3Mtd2l6LXNlcnAQAzIICAAQFhAeEAoyBggAEBYQHjIGCAAQFhAeOgoIABBHENYEELADSgQIQRgAUMUEWMUEYJwLaAFwAHgAgAHeAYgB3gKSAQUwLjEuMZgBAKABAqABAcABAcgBCA&sclient=gws-wiz-serp&bshm=lbse/1"
+url = f"https://www.google.com/search?q=werq+labs&sxsrf=AB5stBgPduxXVm-0SzcQ6rAQ4Rd4hMU8Ow%3A1689814822665&source=hp&ei=Joe4ZKG-JufkseMPu8W_mAw&iflsig=AD69kcEAAAAAZLiVNgY4WXKLAn5Tz7c_RzuH65WwbDL1&gs_ssp=eJzj4tVP1zc0LC7IrUrLSck1YLRSNagwTko1TzZMMU81NzFJszRKsTKoSDUzTDYwNkoxTE1LNTFJSvXiLE8tKlTISUwqBgCG7hPr&oq=w&gs_lp=Egdnd3Mtd2l6IgF3KgIIADINEC4YrwEYxwEYigUYJzIEECMYJzIHECMYigUYJzIHEAAYigUYQzIHEAAYigUYQzIHEAAYigUYQzILEAAYgAQYsQMYgwEyCxAAGIAEGLEDGIMBMgsQABiABBixAxiDATINEAAYigUYsQMYgwEYQ0iCCFAAWABwAHgAkAEAmAGcAaABnAGqAQMwLjG4AQPIAQD4AQE&sclient=gws-wiz"
 driver.get(url)
 
 block= driver.find_element(By.CSS_SELECTOR,'#rhs > div > div > div.I6TXqe')
 print(block)
-
 
 #Scrapping values of ratings and reviews
 values = block.find_element(By.XPATH,'//*[@class="osrp-blk"]/div[1]/div[2]/div[2]').text.replace('\n'," ")
@@ -33,12 +32,11 @@ review_block=driver.find_element(By.CSS_SELECTOR,"#QA0Szd > div > div > div.w6VY
 review_div=review_block.find_element(By.XPATH,'//*[@id="QA0Szd"]/div/div/div[1]/div[2]/div/div[1]/div/div/div[3]/div/div/button[2]/div[2]/div[2]').click()
 time.sleep(5)#wait for page load
 
-reviews=[]
 R = driver.find_element(By.CSS_SELECTOR,"#QA0Szd > div > div > div.w6VYqd > div:nth-child(2) > div > div.e07Vkf.kA9KIf > div > div > div.m6QErb.DxyBCb.kA9KIf.dS8AEf")
-# print(R.text)
+print(R.text)
 
-# R1=R.find_element(By.CSS_SELECTOR,"div:nth-child(8)")
-# print(R1.text)
+R1=R.find_element(By.CSS_SELECTOR,"div:nth-child(8)")
+print(R1.text)
 
 Rlist=R.find_elements(By.XPATH,'//*[@id="QA0Szd"]/div/div/div[1]/div[2]/div/div[1]/div/div/div[3]/div[9]')
 
@@ -52,74 +50,28 @@ for i in Rlist:
         
         name=i.find_elements(By.XPATH,'//*[@id="QA0Szd"]/div/div/div[1]/div[2]/div/div[1]/div/div/div[3]/div[9]/div/div/div/div[2]/div[2]/div[1]/button/div[1]')
         review=i.find_elements(By.XPATH,'//*[@class="MyEned"]/span')
-        print("here")
-for j in review:
-    print(j.text)
 
-for k in name:
-    print(k.text)
+response = BeautifulSoup(driver.page_source, 'html.parser')
+# reviews = response.find_all('div', class_='m6QErb')
+re_b = response.find_all('div',class_='jftiEf fontBodyMedium')
+print(re_b)
+review_set =get_review_summary(re_b)
+print(review_set)
 
-
-# Find the match using regex
-pattern = r'q=([^&]+)'
-match = re.search(pattern, url)
-if match:
-    searched_value = match.group(1).replace('+',' ')
-    print(searched_value)
-else:
-    print("No search value found in the URL.")
-
-# Define the regex pattern to extract the platform
-pattern = r"https?://(?:www\.)?([^/?]+)"
-
-matches = re.findall(pattern, url)
-
-platform = matches[0] if matches else None
-
-print("Platform:", platform)
-
-#finding if client is registered in client_table
-# cursor.callproc('SP_client_tale_get_by_name',[searched_value])
-# result = list(cursor.stored_results())[0].fetchall()
-# cursor.nextset()
-
-# if len(result)==0:
-#     cursor.callproc('Sp_client_tale_insert_user',[searched_value])
-#     conn.commit()
-
-
-# #finding is the searching platform registered or not
-# cursor.callproc('SP_client_tale_get_by_name',[searched_value])
-# result2 = list(cursor.stored_results())[0].fetchall()
-# cursor.nextset()
-# cl_id=result2[0][0]
-
-# cursor.callproc('sp_scrapping_detail_get_by_client_id',[cl_id])
-# cl_result= list(cursor.stored_results())[0].fetchall()
-# cursor.nextset()
-
-# if len(cl_result)==0:
-#     cursor.callproc('SP_scrapping_detail_insert',[cl_id,platform,url])#inserting scrapping details into table
-#     conn.commit()
-
-
-# #finding Inserting ratings and review in db
-# cursor.callproc('sp_scrapping_detail_get_by_client_id',[cl_id])
-# cl_result= list(cursor.stored_results())[0].fetchall()
-# cursor.nextset()
-# org_id=cl_result[0][0]
-
-# cursor.callproc('SP_rating_review_get_by_org_id',[org_id])
-# org_res= list(cursor.stored_results())[0].fetchall()
-# cursor.nextset()
-
-# if len(org_res)==0:
-#     cursor.callproc('SP_rating_review_insert',[org_id,Rating,total_review])
-#     conn.commit()
-#     print("No old entry found so inserting it as new")
-# elif int(org_res[0][0]<int(total_review)):
-#     cursor.callproc('SP_rating_review_insert',[org_id,Rating,total_review])
-#     conn.commit()
-#     print("Total Total Count of Review is Increased")
-# else:
-#     print("Total Count of Review is same")
+def get_review_summary(result_set):
+    rev_dict = {
+        'Reviewer_name':[],
+        'Review Rate': [],
+        'Review Time': [],
+        'Review Text' : []}
+    for result in result_set:
+        review_name=result.find('div',class_='d4r55').text
+        review_rate = result.find('span', class_='kvMYJc')["aria-label"]
+        review_time = result.find('span',class_='rsqaWe').text
+        review_text = result.find('span',class_='wiI7pd').text
+        rev_dict['Reviewer_name'].append(review_name)
+        rev_dict['Review Rate'].append(review_rate)
+        rev_dict['Review Time'].append(review_time)
+        rev_dict['Review Text'].append(review_text)
+    import pandas as pd    
+    return(pd.DataFrame(rev_dict))
